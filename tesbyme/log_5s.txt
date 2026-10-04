@@ -1,0 +1,147 @@
+(base) supharadaj.@8318 tesbyme % for f in asm1_countdown1m.s asm1_countdown2m.s asm1_countdown4m.s; do
+  for i in 1 2 3; do
+    echo "== $f 5S run $i"
+    ripes --mode cli -t asm --src $f --proc RV32_5S --iret --exectime
+  done
+done | tee results_5s.txt
+== asm1_countdown1m.s 5S run 1
+
+Program exited with code: 0
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+14787
+== asm1_countdown1m.s 5S run 2
+
+Program exited with code: 0
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+14528
+== asm1_countdown1m.s 5S run 3
+
+Program exited with code: 0
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+14270
+== asm1_countdown2m.s 5S run 1
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+28885
+== asm1_countdown2m.s 5S run 2
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+28814
+== asm1_countdown2m.s 5S run 3
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+28912
+== asm1_countdown4m.s 5S run 1
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+143650
+== asm1_countdown4m.s 5S run 2
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+3695538
+== asm1_countdown4m.s 5S run 3
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+14773713
+(base) supharadaj.@8318 tesbyme % caffeinate -i /usr/bin/time -l /Applications/Ripes-continuous.app/Contents/MacOS/Ripes --mode cli -t asm --src asm1_countdown4m.s --proc RV32_5S --iret --exectime
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+144114
+      144.30 real       140.94 user         1.12 sys
+           297762816  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               21806  page reclaims
+                 101  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   1  messages sent
+                   0  messages received
+                   0  signals received
+                 105  voluntary context switches
+               35325  involuntary context switches
+        333432157379  instructions retired
+        188098284819  cycles elapsed
+           249594912  peak memory footprint
+(base) supharadaj.@8318 tesbyme % for f in asm1_countdown1m.s asm1_countdown2m.s; do
+  echo "== $f 5S with time"
+  caffeinate -i /usr/bin/time -l /Applications/Ripes-continuous.app/Contents/MacOS/Ripes --mode cli -t asm --src $f --proc RV32_5S --iret --exectime 2>&1 | grep -E "retired|execution|real|maximum resident"
+done | tee results_5s_rss.txt
+== asm1_countdown1m.s 5S with time
+===== instructions retired
+===== wall-clock model execution time (ms)
+       14.43 real        14.34 user         0.08 sys
+           136740864  maximum resident set size
+         83939975470  instructions retired
+== asm1_countdown2m.s 5S with time
+===== instructions retired
+===== wall-clock model execution time (ms)
+       29.38 real        29.24 user         0.12 sys
+           188858368  maximum resident set size
+        166772667663  instructions retired
+(base) supharadaj.@8318 tesbyme % for f in asm1_countdown1m.s asm1_countdown2m.s; do
+  echo "== $f 5S with time"
+  caffeinate -i /usr/bin/time -l /Applications/Ripes-continuous.app/Contents/MacOS/Ripes --mode cli -t asm --src $f --proc RV32_5S --iret --exectime 2>&1 | grep -E -A1 "=====|real|maximum resident|instructions retired|cycles elapsed"
+done | tee results_5s_rss.txt
+== asm1_countdown1m.s 5S with time
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+14269
+       14.43 real        14.33 user         0.08 sys
+           136626176  maximum resident set size
+                   0  average shared memory size
+--
+         83939039644  instructions retired
+         28174957776  cycles elapsed
+            74154920  peak memory footprint
+== asm1_countdown2m.s 5S with time
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+28837
+       28.99 real        28.87 user         0.11 sys
+           189038592  maximum resident set size
+                   0  average shared memory size
+--
+        166772392790  instructions retired
+         56691365864  cycles elapsed
+           130794432  peak memory footprint
+(base) supharadaj.@8318 tesbyme % caffeinate -i ripes --mode cli -t asm --src asm1_countdown4m.s --proc RV32_5S --iret --exectime | tee -a results_5s.txt
+ripes: No such file or directory
+(base) supharadaj.@8318 tesbyme % caffeinate -i /Applications/Ripes-continuous.app/Contents/MacOS/Ripes --mode cli -t asm --src asm1_countdown4m.s --proc RV32_5S --iret --exectime | tee -a results_5s.txt
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+141797

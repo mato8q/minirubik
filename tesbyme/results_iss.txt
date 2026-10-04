@@ -1,0 +1,63 @@
+== asm1_countdown1m.s ISS run 1
+
+Program exited with code: 0
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+119
+== asm1_countdown1m.s ISS run 2
+
+Program exited with code: 0
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+124
+== asm1_countdown1m.s ISS run 3
+
+Program exited with code: 0
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+122
+== asm1_countdown2m.s ISS run 1
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+241
+== asm1_countdown2m.s ISS run 2
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+243
+== asm1_countdown2m.s ISS run 3
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+243
+== asm1_countdown4m.s ISS run 1
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+484
+== asm1_countdown4m.s ISS run 2
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+479
+== asm1_countdown4m.s ISS run 3
+
+Program exited with code: 0
+===== instructions retired
+8000004
+===== wall-clock model execution time (ms)
+477

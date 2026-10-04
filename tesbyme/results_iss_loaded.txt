@@ -1,0 +1,49 @@
+== 2m ISS LOADED run 1
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+383
+== 2m ISS LOADED run 2
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+406
+== 2m ISS LOADED run 3
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+386
+== 2m ISS LOADED run 4
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+402
+== 2m ISS LOADED run 5
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+398
+== 2m ISS LOADED run 6
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+368
+== 2m ISS LOADED run 7
+
+Program exited with code: 0
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+435

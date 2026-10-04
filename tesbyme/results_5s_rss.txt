@@ -1,0 +1,24 @@
+== asm1_countdown1m.s 5S with time
+===== instructions retired
+2000004
+===== wall-clock model execution time (ms)
+14269
+       14.43 real        14.33 user         0.08 sys
+           136626176  maximum resident set size
+                   0  average shared memory size
+--
+         83939039644  instructions retired
+         28174957776  cycles elapsed
+            74154920  peak memory footprint
+== asm1_countdown2m.s 5S with time
+===== instructions retired
+4000004
+===== wall-clock model execution time (ms)
+28837
+       28.99 real        28.87 user         0.11 sys
+           189038592  maximum resident set size
+                   0  average shared memory size
+--
+        166772392790  instructions retired
+         56691365864  cycles elapsed
+           130794432  peak memory footprint
