@@ -1,0 +1,81 @@
+== asm1_storesame1m.s run 1
+===== instructions retired
+3000005
+--
+            73056256  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame1m.s run 2
+===== instructions retired
+3000005
+--
+            73072640  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame1m.s run 3
+===== instructions retired
+3000005
+--
+            73072640  maximum resident set size
+                   0  average shared memory size
+== asm1_storeseq1m.s run 1
+===== instructions retired
+4000005
+--
+           304758784  maximum resident set size
+                   0  average shared memory size
+== asm1_storeseq1m.s run 2
+===== instructions retired
+4000005
+--
+           304775168  maximum resident set size
+                   0  average shared memory size
+== asm1_storeseq1m.s run 3
+===== instructions retired
+4000005
+--
+           304857088  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame2m.s run 1
+            60997632  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame2m.s run 2
+            61014016  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame2m.s run 3
+            61063168  maximum resident set size
+                   0  average shared memory size
+== asm1_storeseq2m.s run 1
+===== instructions retired
+8000005
+--
+           545013760  maximum resident set size
+                   0  average shared memory size
+== asm1_storeseq2m.s run 2
+===== instructions retired
+8000005
+--
+           538722304  maximum resident set size
+                   0  average shared memory size
+== asm1_storeseq2m.s run 3
+===== instructions retired
+8000005
+--
+           538738688  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame2m.s run 1 (rerun)
+===== instructions retired
+6000005
+--
+            73072640  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame2m.s run 2 (rerun)
+===== instructions retired
+6000005
+--
+            73056256  maximum resident set size
+                   0  average shared memory size
+== asm1_storesame2m.s run 3 (rerun)
+===== instructions retired
+6000005
+--
+            73023488  maximum resident set size
+                   0  average shared memory size
