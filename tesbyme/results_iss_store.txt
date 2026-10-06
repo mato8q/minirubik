@@ -1,0 +1,21 @@
+== storeseq1m ISS time run 1
+
+Program exited with code: 0
+===== instructions retired
+4000005
+===== wall-clock model execution time (ms)
+379
+== storeseq1m ISS time run 2
+
+Program exited with code: 0
+===== instructions retired
+4000005
+===== wall-clock model execution time (ms)
+371
+== storeseq1m ISS time run 3
+
+Program exited with code: 0
+===== instructions retired
+4000005
+===== wall-clock model execution time (ms)
+396
