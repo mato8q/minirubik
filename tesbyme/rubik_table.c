@@ -159,9 +159,79 @@ static void build_tables(void) //declare my own buil_tables
     printf("Maximum orientation distance found: %d\n", max_dist_o);
     printf("Orientation distance to solved state: %d\n", h_O[0]);
 }
+static uint8_t move_dis[11];
+static uint8_t next_move[12];
+static uint16_t page_p[12];
+static uint16_t page_o[12];
+static uint32_t check;
+
+static int ida_star(uint16_t p, uint16_t o){
+  check = 0;
+  uint8_t h_root = (h_P[p]> h_O[o]) ? h_P[p] : h_O[o];
+  if(h_root == 0) {
+    return 0; // Already solved
+  }
+  int bound = h_root;
+  while(bound <=11){
+    int depth = 0;
+    page_p[0] = p, page_o[0] = o;
+    next_move[0] = 0;
+    while(depth >= 0){
+      // Implementation for IDA* search
+      uint16_t h_current = (h_P[page_p[depth]] > h_O[page_o[depth]]) ? h_P[page_p[depth]] : h_O[page_o[depth]]; 
+      if(h_current == 0) {
+        return depth; // Found solution
+      }
+      if(next_move[depth] == 9) {
+          depth--;
+          continue;
+        }
+      uint8_t move = next_move[depth]++;
+      int face = move / 3;
+      int turn = move % 3+1;
+      uint16_t c_P = page_p[depth], c_O = page_o[depth];
+      for(int i=0; i < turn; i++){
+        c_P = permutation[face][c_P];
+        c_O = orientation[face][c_O];
+      }
+      check++;
+      uint16_t h_child = (h_P[c_P] > h_O[c_O]) ? h_P[c_P] : h_O[c_O];
+      if((depth+1) + h_child <= bound){
+        move_dis[depth] = move;
+        depth++;
+        page_p[depth] = c_P;
+        page_o[depth] = c_O;
+        next_move[depth] = 0;
+      }
+    }
+
+    bound++;
+  }
+
+  return -1;
+}
 
 int main(void)
 {
     build_tables();
+    int n = ida_star(0, 0);
+    printf("Minimum number of moves to solve the cube: %d\n", n);
+    state_t s;
+    const char *input = "21345671111111"; // example input string representing a cube state
+    for(int i = 0; i < 7; i++){
+      s.p[i]= input[i]-'1';
+      s.o[i]= input[i+7]- '1';
+    }
+    uint32_t rank = rank_state(&s);
+    uint16_t p = rank / ORIENTATIONS;
+    uint16_t o = rank % ORIENTATIONS;
+    n = ida_star(p, o);
+    printf("Minimum number of moves to solve the cube from the given state: %d\n", n);
+    printf("Number of states checked during search: %u\n", (unsigned int) check);
+    for(int i = 0; i < n; i++){
+      printf("%s ", move_names[move_dis[i]]);
+    }
+    printf("\n");
+
     return 0;
 }
