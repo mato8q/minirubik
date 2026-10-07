@@ -187,6 +187,7 @@ static int ida_star(uint16_t p, uint16_t o){
           continue;
         }
       uint8_t move = next_move[depth]++;
+      if(depth > 0 && move/3 == move_dis[depth-1]/3) continue; // Avoid consecutive moves on the same face
       int face = move / 3;
       int turn = move % 3+1;
       uint16_t c_P = page_p[depth], c_O = page_o[depth];
