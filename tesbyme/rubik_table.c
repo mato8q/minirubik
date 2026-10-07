@@ -80,6 +80,7 @@ static void unrank_state(uint32_t rank, state_t *state)
 static uint16_t permutation[3][PERMUTATIONS];
 static uint16_t orientation[3][ORIENTATIONS];
 static uint8_t h_P[PERMUTATIONS]; //table for storing the number of moves to reach the solved state from each permutation
+static uint8_t h_O[ORIENTATIONS]; //table for storing the number of moves to reach the solved state from each orientation
 
 static void build_tables(void) //declare my own buil_tables
 {
@@ -128,6 +129,35 @@ static void build_tables(void) //declare my own buil_tables
     }
     printf("Maximum distance found: %d\n", max_dist);
     printf("Distance to solved state: %d\n", h_P[0]);
+
+
+    memset(h_O, UINT8_MAX, ORIENTATIONS);
+    h_O[0] = 0;
+    uint16_t o_queue[ORIENTATIONS];
+    o_queue[0] = 0;
+    uint32_t o_head = 0, o_tail = 1;
+    while (o_head < o_tail) {
+        uint16_t here = o_queue[o_head++];
+        for (uint8_t face = 0; face < 3; ++face) {
+            uint16_t next_o = here;
+            for (uint8_t turn = 0; turn < 3; ++turn) {
+                next_o = orientation[face][next_o];
+                if(h_O[next_o]== UINT8_MAX){
+                    h_O[next_o] = (uint8_t)(h_O[here]+1);
+                    o_queue[o_tail++] = next_o;
+                }
+            }
+        }
+    }
+    printf("Orientation table built. Total orientations: %u\n", (unsigned int) o_tail);
+    int max_dist_o = 0;
+    for(int i = 0; i < ORIENTATIONS; ++i) {
+        if(h_O[i] > max_dist_o) {
+            max_dist_o = h_O[i];
+        }
+    }
+    printf("Maximum orientation distance found: %d\n", max_dist_o);
+    printf("Orientation distance to solved state: %d\n", h_O[0]);
 }
 
 int main(void)
