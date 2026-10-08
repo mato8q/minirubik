@@ -1,3 +1,5 @@
+.equ RENDER, 1            # 1 = GUI build with LED, 0 = CLI build for --iret
+
 .text
   la s1, h_O #p
   la s2, h_N  
@@ -162,6 +164,22 @@ found:
   lbu t3, 48(s0)
   lbu t4, 60(s0)
   li  s10, 0             # k = 0
+
+.if RENDER
+  la   a2, cube           # cube[0..6] = P, cube[7..13] = O
+  la   a3, input
+  li   a4, 14
+r_init:
+  lbu  t0, 0(a3)
+  addi t0, t0, -49        # char -> number
+  sb   t0, 0(a2)
+  addi a3, a3, 1
+  addi a2, a2, 1
+  addi a4, a4, -1
+  bnez a4, r_init
+  jal  ra, render         # draw the scrambled cube
+.endif
+
 e_loop:
   bgeu s10, s9, e_check  # k >= n -> all moves replayed
   add  t6, s0, s10
@@ -171,6 +189,14 @@ e_loop:
   add  t5, a6, t0
   lbu  a1, 0(t5)         # turn
   jal  ra, rot
+.if RENDER
+  add  t6, s0, s10
+  lbu  t0, 84(t6)         # m = move_dis[k] again (rot used t0)
+  add  t5, a6, t0
+  lbu  a1, 0(t5)          # turn again (rot counted a1 down to 0)
+  jal  ra, arr_move       # same move on the P/O arrays
+  jal  ra, render         # redraw
+.endif
   addi s10, s10, 1       # k++
   j e_loop
 
@@ -312,6 +338,95 @@ coord_found:
   slli a4, a1, 2
   or   a4, a4, a2        # (i<<2) | o[i]
   ret
+.if RENDER
+  # arr_move: apply face a0, a1 quarter turns to cube[]
+  # keeps t1..t4, s-registers, a0
+arr_move:
+  slli t0, a0, 3
+  sub  t0, t0, a0         # face * 7 = (face << 3) - face
+  la   t5, src_tab
+  add  t5, t5, t0         # t5 -> source[face][0]
+  la   t6, tw_tab
+  add  t6, t6, t0         # t6 -> twist[face][0]
+  la   a2, cube
+  la   a3, tmp
+  li   a4, 7
+am_i:
+  lbu  t0, 0(t5)          # from = source[face][i]
+  add  t0, a2, t0
+  lbu  a7, 0(t0)          # P[from]
+  sb   a7, 0(a3)          # tmp P[i]
+  lbu  a7, 7(t0)          # O[from]
+  lbu  t0, 0(t6)          # twist[face][i]
+  add  a7, a7, t0
+  li   t0, 3
+  bltu a7, t0, am_ok      # < 3 -> already mod 3
+  addi a7, a7, -3
+am_ok:
+  sb   a7, 7(a3)          # tmp O[i]
+  addi t5, t5, 1
+  addi t6, t6, 1
+  addi a3, a3, 1
+  addi a4, a4, -1
+  bnez a4, am_i
+  la   a3, tmp            # copy tmp -> cube (14 bytes)
+  li   a4, 14
+am_cp:
+  lbu  t0, 0(a3)
+  sb   t0, 0(a2)
+  addi a3, a3, 1
+  addi a2, a2, 1
+  addi a4, a4, -1
+  bnez a4, am_cp
+  addi a1, a1, -1
+  bnez a1, arr_move       # next quarter turn
+  ret
+
+  #draw 24 facelets (4*3 pixels each)
+  # keeps t1..t4, s-registers
+render:
+  la   a0, fl_tab         # 24 entries: slot, s, pixel index (.half)
+  la   a1, cube
+  la   a2, ccol
+  la   a3, palette
+  li   a4, LED_MATRIX_0_BASE
+  li   a7, 24
+r_loop:
+  lbu  t0, 0(a0)          # slot (7 = fixed corner)
+  lbu  t5, 1(a0)          # s
+  li   t6, 7
+  beq  t0, t6, r_col      # fixed corner: cubie 7, j = s
+  add  t6, a1, t0
+  lbu  t0, 0(t6)          # cubie = P[slot]
+  lbu  t6, 7(t6)          # o = O[slot]
+  sub  t5, t5, t6         # j = s - o
+  bgez t5, r_col
+  addi t5, t5, 3          # j = (s - o) mod 3
+r_col:
+  slli t0, t0, 2
+  add  t0, t0, t5
+  add  t0, a2, t0
+  lbu  t0, 0(t0)          # face color id = ccol[cubie][j]
+  slli t0, t0, 2
+  add  t0, a3, t0
+  lw   t5, 0(t0)          # RGB
+  lhu  t0, 2(a0)          # pixel index = y * 35 + x
+  slli t0, t0, 2          # 4 bytes per LED
+  add  t0, a4, t0
+  li   t6, 3              # 3 rows
+r_row:
+  sw   t5, 0(t0)
+  sw   t5, 4(t0)
+  sw   t5, 8(t0)
+  sw   t5, 12(t0)
+  addi t0, t0, 140        # next row: WIDTH (35) * 4 bytes
+  addi t6, t6, -1
+  bnez t6, r_row
+  addi a0, a0, 4
+  addi a7, a7, -1
+  bnez a7, r_loop
+  ret
+.endif
 
 .data
 perm_off: .word 0, 10080, 20160
@@ -348,4 +463,79 @@ move_names:
   .string "D2"
   .byte 0
   .string "D'"
-  .byte 0                
+  .byte 0             
+
+.if RENDER
+palette:                  # face color ids: U=0 L=1 F=2 R=3 B=4 D=5
+  .word 0xFFFFFF, 0xFF8000, 0x00C000, 0xFF0000, 0x0000FF, 0xFFFF00
+fl_tab:                   # slot, s, pixel index (y*35 + x)
+  .byte 6, 0
+  .half 9                 # U row 0
+  .byte 3, 0
+  .half 13
+  .byte 7, 0
+  .half 114               # U row 1
+  .byte 0, 0
+  .half 118
+  .byte 6, 2
+  .half 245               # L row 0
+  .byte 7, 1
+  .half 249
+  .byte 5, 1
+  .half 350               # L row 1
+  .byte 2, 2
+  .half 354
+  .byte 7, 2
+  .half 254               # F row 0
+  .byte 0, 1
+  .half 258
+  .byte 2, 1
+  .half 359               # F row 1
+  .byte 1, 2
+  .half 363
+  .byte 0, 2
+  .half 263               # R row 0
+  .byte 3, 1
+  .half 267
+  .byte 1, 1
+  .half 368               # R row 1
+  .byte 4, 2
+  .half 372
+  .byte 3, 2
+  .half 272               # B row 0
+  .byte 6, 1
+  .half 276
+  .byte 4, 1
+  .half 377               # B row 1
+  .byte 5, 2
+  .half 381
+  .byte 2, 0
+  .half 499               # D row 0
+  .byte 1, 0
+  .half 503
+  .byte 5, 0
+  .half 604               # D row 1
+  .byte 4, 0
+  .half 608
+ccol:                     # colors of cubie c, stickers s = 0, 1, 2 (+ pad)
+  .byte 0, 2, 3, 0        # 0 FUR: U F R
+  .byte 5, 3, 2, 0        # 1 FDR: D R F
+  .byte 5, 2, 1, 0        # 2 FDL: D F L
+  .byte 0, 3, 4, 0        # 3 BUR: U R B
+  .byte 5, 4, 3, 0        # 4 BDR: D B R
+  .byte 5, 1, 4, 0        # 5 BDL: D L B
+  .byte 0, 4, 1, 0        # 6 BUL: U B L
+  .byte 0, 1, 2, 0        # 7 fixed FUL: U L F
+src_tab:                  # source[face][7] from the C code
+  .byte 1, 4, 2, 0, 3, 5, 6
+  .byte 0, 1, 2, 4, 5, 6, 3
+  .byte 0, 2, 5, 3, 1, 4, 6
+tw_tab:                   # twist[face][7] from the C code
+  .byte 1, 2, 0, 2, 1, 0, 0
+  .byte 0, 0, 0, 1, 2, 1, 2
+  .byte 0, 0, 0, 0, 0, 0, 0
+cube:                     # P[7], O[7] for drawing
+  .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+tmp:
+  .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+.endif
