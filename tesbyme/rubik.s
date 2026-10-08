@@ -11,11 +11,66 @@
   la a5, col_face
   la a6, col_turn  
 
+#C:encode intput t1=p, t2 =o, t3=a, t4=b
+la a0, input
+
+  # p: 6 rounds (Horner, x6 x5 x4 x3 x2 with shift/add)
+  li a1, 0
+  jal ra, cnt
+  mv t1, a3              # round 0: p = s0
+
+  li a1, 1
+  jal ra, cnt
+  slli t5, t1, 2
+  slli t6, t1, 1
+  add  t1, t5, t6        # p*6
+  add  t1, t1, a3
+
+  li a1, 2
+  jal ra, cnt
+  slli t5, t1, 2
+  add  t1, t5, t1        # p*5
+  add  t1, t1, a3
+
+  li a1, 3
+  jal ra, cnt
+  slli t1, t1, 2         # p*4
+  add  t1, t1, a3
+
+  li a1, 4
+  jal ra, cnt
+  slli t5, t1, 1
+  add  t1, t5, t1        # p*3
+  add  t1, t1, a3
+
+  li a1, 5
+  jal ra, cnt
+  slli t1, t1, 1         # p*2
+  add  t1, t1, a3
+
+  # o: 6 rounds
+  li t2, 0
+  li a1, 0
+o_loop:
+  slli t5, t2, 1
+  add  t2, t5, t2        # o*3
+  add  t0, a0, a1
+  lbu  t0, 7(t0)         # orientation char of slot i
+  addi t0, t0, -49
+  add  t2, t2, t0
+  addi a1, a1, 1
+  li   t0, 6
+  bltu a1, t0, o_loop    # i < 6 -> loop
+
+  # a, b
+  li a3, 49              # '1' = cubie 0
+  jal ra, coord
+  mv t3, a4
+  li a3, 50              # '2' = cubie 1
+  jal ra, coord
+  mv t4, a4
+
 # root stores on page[0]
-  li t1, 720 #p
-  li t2, 0  #o
-  li t3, 4  #a cubic 0 at 1, rotate 0-> 1<<2 = 4
-  li t4, 0  #b cubic 1 at 0, rotate 0
   sh t1, 0(s0)           # page_p[0] = p
   sh t2, 24(s0)          # page_o[0] = o
   sb t3, 48(s0)          # page_a[0] = a
@@ -25,6 +80,7 @@
 # h_root
   jal ra, heur # t5 = h(root)
   li a0, 0  # answer=0
+  li a1, 1 #verified (0 moves solves a solved cube)
   beqz t5,finish  #h_root ==0 solved ->0
   mv  s9, t5 # bound = h_root
 
@@ -63,37 +119,7 @@ gen:
   lhu t2, 24(t5)         # o = page_o[depth]
   lbu t3, 48(t6)         # a = page_a[depth]
   lbu t4, 60(t6)         # b = page_b[depth]
-  
-  slli t0, a0, 2  #t0 = face*4
-  add t5, s6, t0 # t5 =&perm_off[face]
-  lw t5, 0(t5)  # t5 =face*10080
-  add a2, s3, t5 # a2 =&permutation[face][0]
-  
-  add t5, s7, t0 # t5 =&ori_off[face]
-  lw t5, 0(t5)    # t5 = face*1458
-  add a3, s4, t5  #a3 =&orientation[face][0]
-
-  add t5, s8, t0 # t5 =s81 +0t2 = &cub_off[face]
-  lw t5, 0(t5)    # t5 = face*28
-  add a4, s5, t5  #a4 = &cub_move[face][0]
-
-turn_loop:
-  slli t0, t1, 1        # p*2 (.half)
-  add  t0, a2, t0
-  lhu  t1, 0(t0)        # p= permutation[face][p]
-
-  slli t0, t2, 1        # o*2 (.half)
-  add  t0, a3, t0
-  lhu  t2, 0(t0)        # o = orientation[face][o]
-
-  add  t0, a4, t3       # a × 1  (.byte no shift)
-  lbu  t3, 0(t0)        # a = cub_move[face][a]
-
-  add  t0, a4, t4
-  lbu  t4, 0(t0)        # b = cub_move[face][b]
-
-  addi a1, a1, -1       # turn--
-  bnez a1, turn_loop    # still left -> loop
+  jal ra, rot
   addi s11, s11, 1   # check++
   jal ra, heur        #t5=h(child)
 
@@ -129,16 +155,67 @@ next_bound:
   j bound_loop
 
 found:
-  addi a0, s10, 1        # result = depth + 1
+  addi s9, s10, 1        # n = depth + 1 (s9 no longer needed as bound)
+  #e: replay move_dis from root, must reach solved
+  lhu t1, 0(s0)          # start from page[0] = root
+  lhu t2, 24(s0)
+  lbu t3, 48(s0)
+  lbu t4, 60(s0)
+  li  s10, 0             # k = 0
+e_loop:
+  bgeu s10, s9, e_check  # k >= n -> all moves replayed
+  add  t6, s0, s10
+  lbu  t0, 84(t6)        # m = move_dis[k]
+  add  t5, a5, t0
+  lbu  a0, 0(t5)         # face
+  add  t5, a6, t0
+  lbu  a1, 0(t5)         # turn
+  jal  ra, rot
+  addi s10, s10, 1       # k++
+  j e_loop
+
+e_check:
+  or   t0, t1, t2        # t0 == 0 only if p == 0 and o == 0
+  li   a1, 1             # assume OK
+  beqz t0, e_ok
+  li   a1, 0             # failed
+e_ok:
+  mv   a0, s9            # a0 = answer
   j finish
 
 not_found:
   li a0, -1
+  li a1, 0               #no solution to verify
 
 finish:
-  li a7, 10
+  mv   s9, a0            # keep answer (a0 is needed by ecall)
+  li   a7, 1             # print int
+  ecall                  # prints a0 = answer
+  li   a0, 10            # '\n'
+  li   a7, 11            # print char
   ecall
-
+  la   t3, move_names
+  li   s10, 0            # k = 0
+p_loop:
+  bge  s10, s9, p_done   # k >= n -> done (also handles n = -1, 0)
+  add  t6, s0, s10
+  lbu  t0, 84(t6)        # m = move_dis[k]
+  slli t0, t0, 2         # m * 4 (each name is 4 bytes)
+  add  a0, t3, t0        # a0 = &move_names[m]
+  li   a7, 4             # print string
+  ecall
+  li   a0, 32            # ' '
+  li   a7, 11
+  ecall
+  addi s10, s10, 1
+  j p_loop
+p_done:
+  li   a0, 10            # '\n'
+  li   a7, 11
+  ecall
+  xori a0, a1, 1            # answer back in a0
+  li   a7, 93
+  ecall
 
 # heuristic
 heur:
@@ -168,6 +245,74 @@ heur:
 heur_done:  
   ret
 
+rot:
+  slli t0, a0, 2  #t0 = face*4
+  add t5, s6, t0 # t5 =&perm_off[face]
+  lw t5, 0(t5)  # t5 =face*10080
+  add a2, s3, t5 # a2 =&permutation[face][0]
+  
+  add t5, s7, t0 # t5 =&ori_off[face]
+  lw t5, 0(t5)    # t5 = face*1458
+  add a3, s4, t5  #a3 =&orientation[face][0]
+
+  add t5, s8, t0 # t5 =s81 +0t2 = &cub_off[face]
+  lw t5, 0(t5)    # t5 = face*28
+  add a4, s5, t5  #a4 = &cub_move[face][0]
+rot_loop:
+
+  slli t0, t1, 1        # p*2 (.half)
+  add  t0, a2, t0
+  lhu  t1, 0(t0)        # p= permutation[face][p]
+
+  slli t0, t2, 1        # o*2 (.half)
+  add  t0, a3, t0
+  lhu  t2, 0(t0)        # o = orientation[face][o]
+
+  add  t0, a4, t3       # a × 1  (.byte no shift)
+  lbu  t3, 0(t0)        # a = cub_move[face][a]
+
+  add  t0, a4, t4
+  lbu  t4, 0(t0)        # b = cub_move[face][b]
+
+  addi a1, a1, -1       # turn--
+  bnez a1, rot_loop    # still left -> loop
+  ret
+
+# count_smallwer: a1=i -> a3 = count of p[j], j>i  
+cnt:
+  add  t0, a0, a1
+  lbu  a4, 0(t0)         # a4 = p[i]
+  li   a3, 0             # n = 0
+  addi a2, a1, 1         # j = i + 1
+cnt_loop:
+  li   t0, 7
+  bgeu a2, t0, cnt_done  # j >= 7 -> done
+  add  t0, a0, a2
+  lbu  t0, 0(t0)         # p[j]
+  bgeu t0, a4, cnt_next  # p[j] >= p[i] -> skip
+  addi a3, a3, 1         # n++
+cnt_next:
+  addi a2, a2, 1         # j++
+  j cnt_loop
+cnt_done:
+  ret
+
+#cub_coord: a3 = cubie char -> a4 = (pos<<2)|ori 
+coord:
+  li   a1, 0             # i = 0
+coord_loop:
+  add  t0, a0, a1
+  lbu  a2, 0(t0)         # p[i]
+  beq  a2, a3, coord_found
+  addi a1, a1, 1
+  j coord_loop
+coord_found:
+  lbu  a2, 7(t0)         # o[i]
+  addi a2, a2, -49       # char -> number
+  slli a4, a1, 2
+  or   a4, a4, a2        # (i<<2) | o[i]
+  ret
+
 .data
 perm_off: .word 0, 10080, 20160
 ori_off:  .word 0, 1458, 2916
@@ -181,3 +326,26 @@ work:
   .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0     # next_move  +72
   .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0     # move_dis   +84  
   
+input:
+  .string "21345671111111"   
+  .byte 0 
+
+move_names:
+  .string "R"
+  .byte 0, 0
+  .string "R2"
+  .byte 0
+  .string "R'"
+  .byte 0
+  .string "B"
+  .byte 0, 0
+  .string "B2"
+  .byte 0
+  .string "B'"
+  .byte 0
+  .string "D"
+  .byte 0, 0
+  .string "D2"
+  .byte 0
+  .string "D'"
+  .byte 0                
