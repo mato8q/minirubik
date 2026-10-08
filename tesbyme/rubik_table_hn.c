@@ -357,6 +357,34 @@ static uint8_t *fullBFS_h_P(void){
     printf("Maximum distance in BFS table: %d\n", max_dist);
   return dist;
 }
+static void bytes(FILE *f, const char *label, const uint8_t *arr, uint32_t n){
+    fprintf(f, "%s:", label);
+    for(uint32_t i=0; i<n; ++i){
+        if(i%16==0) fprintf(f, "\n .byte %u", (unsigned int) arr[i]);
+        else fprintf(f, ", %u", (unsigned int) arr[i]);
+    }
+    fprintf(f, "\n");
+}
+static void halves(FILE *f, const char *label, const uint16_t *arr, uint32_t n){
+    fprintf(f, "%s:", label);
+    for(uint32_t i=0; i<n; ++i){
+        if(i%16==0) fprintf(f, "\n .half %u", (unsigned int) arr[i]);
+        else fprintf(f, ", %u", (unsigned int) arr[i]);
+    }
+    fprintf(f, "\n");
+}
+static void tables(void){
+    FILE *f = fopen("tables.s", "w");
+    fprintf(f, ".data\n");
+    halves(f, "permutation", &permutation[0][0], 3*PERMUTATIONS);
+    halves(f, "orientation", &orientation[0][0], 3*ORIENTATIONS);
+    bytes(f, "h_O", h_O, ORIENTATIONS);
+    bytes(f, "h_N", h_N, PERMUTATIONS*9);
+    bytes(f, "cub_move", &cub_move[0][0], 3*28);
+    bytes(f, "col_face", col_face, MOVES);
+    bytes(f, "col_turn", col_turn, MOVES);
+    fclose(f);
+}
 
 int main(void)
 {
@@ -393,7 +421,7 @@ int main(void)
         }
     }
     printf("states where h_P > h_N: %u\n", (unsigned int) p_wins);
-
+    tables();
     uint8_t *bfs_table = fullBFS_h_P();
     uint32_t ct = 0; // count h that exceeds d
     for(uint32_t rank = 0; rank < STATES; ++rank) {
