@@ -179,10 +179,10 @@ static int ida_star(uint16_t p, uint16_t o){
     while(depth >= 0){
       // Implementation for IDA* search
       uint16_t h_current = (h_P[page_p[depth]] > h_O[page_o[depth]]) ? h_P[page_p[depth]] : h_O[page_o[depth]]; 
-      if(h_current == 0) {
+      if(h_current == 0) { // 1st condition
         return depth; // Found solution
       }
-      if(next_move[depth] == 9) {
+      if(next_move[depth] == 9) { // 2nd condition
           depth--;
           continue;
         }
@@ -263,7 +263,9 @@ int main(void)
             ct++;
         }
     }
+  
     printf("Number of discrepancies found: %u\n", (unsigned int)ct);
+    #if 0
     uint32_t not_same =0;
     uint32_t worst_node = 0;
     uint32_t highest_rank = 0;
@@ -282,9 +284,11 @@ int main(void)
     printf("H3 mismatches: %u\n", (unsigned int) not_same);
     printf("H3 worst nodes at distance 11: %u (rank %u)\n",
            (unsigned int) worst_node, (unsigned int) highest_rank);
-
+    #endif
     int n = ida_star(0, 0);
     printf("Minimum number of moves to solve the cube: %d\n", n);
+
+
     state_t s;
     const char *input = "21345671111111"; // example input string representing a cube state
     for(int i = 0; i < 7; i++){
