@@ -17,7 +17,8 @@ typedef struct {
 static const char *const move_names[MOVES] = {"R",  "R2", "R'", "B", "B2",
                                               "B'", "D",  "D2", "D'"};
 static const uint8_t inverse_move[MOVES] = {2, 1, 0, 5, 4, 3, 8, 7, 6};
-/* Each destination takes a cubie from source[face][destination]. */
+static const uint8_t col_face[MOVES] = {0, 0, 0, 1, 1, 1, 2, 2, 2};
+static const uint8_t col_turn[MOVES] = {1, 2, 3, 1, 2, 3, 1, 2, 3};
 static const uint8_t source[3][CUBIES] = {
     {1, 4, 2, 0, 3, 5, 6},
     {0, 1, 2, 4, 5, 6, 3},
@@ -187,9 +188,10 @@ static int ida_star(uint16_t p, uint16_t o){
           continue;
         }
       uint8_t move = next_move[depth]++;
-      if(depth > 0 && move/3 == move_dis[depth-1]/3) continue; // Avoid consecutive moves on the same face
-      int face = move / 3;
-      int turn = move % 3+1;
+      if(depth > 0 && col_face[move] == col_face[move_dis[depth-1]]) continue; // Avoid consecutive moves on the same face
+      int face = col_face[move];
+      int turn = col_turn[move];
+      
       uint16_t c_P = page_p[depth], c_O = page_o[depth];
       for(int i=0; i < turn; i++){
         c_P = permutation[face][c_P];
@@ -287,7 +289,7 @@ int main(void)
     #endif
     int n = ida_star(0, 0);
     printf("Minimum number of moves to solve the cube: %d\n", n);
-
+    
 
     state_t s;
     const char *input = "21345671111111"; // example input string representing a cube state
