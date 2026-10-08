@@ -211,10 +211,78 @@ static int ida_star(uint16_t p, uint16_t o){
 
   return -1;
 }
+static uint8_t *fullBFS_h_P(void){
+  uint8_t *dist = malloc(STATES);
+  uint32_t *queue = malloc(STATES * sizeof(uint32_t));
+  memset(dist, UINT8_MAX, STATES);
+  dist[0] = 0;
+  queue[0] = 0;
+  uint32_t head = 0, tail = 1;
+  while(head < tail){
+    uint32_t here = queue[head++];
+    uint16_t p = here / ORIENTATIONS;
+    uint16_t o = here % ORIENTATIONS;
+    for(uint8_t turn = 0; turn < 3; turn++){
+      for(uint8_t face = 0; face < 3; face++){
+        uint16_t next_p = p, next_o = o;
+        for(uint8_t i=0; i < turn+1; i++){
+          next_p = permutation[face][next_p];
+          next_o = orientation[face][next_o];
+        }
+        uint32_t next_state = next_p * ORIENTATIONS + next_o;
+        if(dist[next_state] == UINT8_MAX){
+          dist[next_state] = (uint8_t)(dist[here]+1);
+          queue[tail++] = next_state;
+        }
+      }
+    }
+  }
+  free(queue);
+  printf("BFS table built. Total states: %u\n", (unsigned int) tail);
+  int max_dist = 0;
+    for(uint32_t i = 0; i < STATES; ++i) {
+        if(dist[i] > max_dist) {
+            max_dist = dist[i];
+        }
+    }
+    printf("Maximum distance in BFS table: %d\n", max_dist);
+  return dist;
+}
 
 int main(void)
 {
     build_tables();
+    uint8_t *bfs_table = fullBFS_h_P();
+    uint32_t ct = 0; // count h that exceeds d
+    for(uint32_t rank = 0; rank < STATES; ++rank) {
+        uint16_t p = rank / ORIENTATIONS;
+        uint16_t o = rank % ORIENTATIONS;
+        uint8_t h = (h_P[p] > h_O[o]) ? h_P[p] : h_O[o];
+        if(h > bfs_table[rank]) {
+            printf("Discrepancy found at rank %u: h=%u, bfs=%u\n", (unsigned int)rank, (unsigned int)h, (unsigned int)bfs_table[rank]);
+            ct++;
+        }
+    }
+    printf("Number of discrepancies found: %u\n", (unsigned int)ct);
+    uint32_t not_same =0;
+    uint32_t worst_node = 0;
+    uint32_t highest_rank = 0;
+    for(uint32_t rank = 0; rank < STATES; ++rank) {
+      if(rank % 500000 == 0) printf("H3 progress: %u/%u\n", (unsigned int)rank, (unsigned int)STATES);
+        uint16_t p = rank / ORIENTATIONS;
+        uint16_t o = rank % ORIENTATIONS;
+        uint8_t len = ida_star(p, o);
+        if(len != bfs_table[rank]) {
+          not_same++; }
+        if(bfs_table[rank] == 11 && check > worst_node) {
+          worst_node = check;
+          highest_rank = rank;
+        }
+    }
+    printf("H3 mismatches: %u\n", (unsigned int) not_same);
+    printf("H3 worst nodes at distance 11: %u (rank %u)\n",
+           (unsigned int) worst_node, (unsigned int) highest_rank);
+
     int n = ida_star(0, 0);
     printf("Minimum number of moves to solve the cube: %d\n", n);
     state_t s;
@@ -233,6 +301,6 @@ int main(void)
       printf("%s ", move_names[move_dis[i]]);
     }
     printf("\n");
-
+    free(bfs_table);
     return 0;
 }
