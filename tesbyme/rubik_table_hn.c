@@ -235,6 +235,33 @@ static uint8_t cub_coord(const state_t *state, uint8_t cubie){
     }
     return 0; // Should never happen
 }
+static uint8_t count_smaller(const state_t *s, uint8_t i){
+    uint8_t n=0;
+    for (uint8_t j = i+1; j < CUBIES; ++j) {
+        if (s->p[j] < s-> p[i]) {
+            ++n;
+        }
+        
+    }
+    return n;
+}
+static void encode_state(const state_t *s, uint16_t *p_out, uint16_t *o_out, uint8_t *a_out, uint8_t *b_out){
+    uint16_t p = count_smaller(s,0);
+    p = (p<<2)+(p<<1)+ count_smaller(s,1); // x6
+    p = (p<<2)+p+ count_smaller(s,2);//x5
+    p = (p<<2)+count_smaller(s,3); //x4
+    p = (p<<1)+p+ count_smaller(s,4); //x3
+    p = (p<<1)+count_smaller(s,5); //x2
+    
+    uint16_t o=0;
+    for(uint8_t i =0; i<6; ++i) o = (o<<1)+o+ s->o[i];
+    *p_out=p;
+    *o_out=o;
+    *a_out=cub_coord(s,0);
+    *b_out=cub_coord(s,1);
+}
+
+
 static uint8_t page_a[12];
 static uint8_t page_b[12];
 static uint8_t move_dis[11];
@@ -382,6 +409,18 @@ int main(void)
     }
   
     printf("Number of discrepancies found: %u\n", (unsigned int)ct);
+
+    uint32_t enc_bad =0;
+    for (uint32_t rank = 0; rank < STATES; ++rank){
+        state_t st;
+        unrank_state(rank, &st);
+        uint16_t ep, eo;
+        uint8_t ea, eb;
+        encode_state(&st, &ep, &eo, &ea, &eb);
+        if(ep != rank/ORIENTATIONS || eo != rank%ORIENTATIONS) enc_bad++;
+    }
+    printf("encode_state mismatches (expected 0): %u\n", (unsigned int) enc_bad);
+    
     #if 1
     uint32_t not_same =0;
     uint32_t worst_node = 0;
@@ -413,11 +452,15 @@ int main(void)
       s.p[i]= input[i]-'1';
       s.o[i]= input[i+7]- '1';
     }
-    uint32_t rank = rank_state(&s);
-    uint16_t p = rank / ORIENTATIONS;
-    uint16_t o = rank % ORIENTATIONS;
+    //uint32_t rank = rank_state(&s);
+    //uint16_t p = rank / ORIENTATIONS;
+    //uint16_t o = rank % ORIENTATIONS;
+    uint16_t p,o;
+    uint8_t a,b;
+    encode_state(&s, &p, &o, &a, &b);
+    n = ida_star(p,o,a,b);
+    //n = ida_star(p, o, cub_coord(&s, 0), cub_coord(&s,1));
 
-    n = ida_star(p, o, cub_coord(&s, 0), cub_coord(&s,1));
     printf("Minimum number of moves to solve the cube from the given state: %d\n", n);
     printf("Number of states checked during search: %u\n", (unsigned int) check);
     for(int i = 0; i < n; i++){
