@@ -1,4 +1,4 @@
-.equ RENDER, 1            # 1 = GUI build with LED, 0 = CLI build for --iret
+.equ RENDER, 0            # 1 = GUI build with LED, 0 = CLI build for --iret
 
 .text
   la s1, h_O #p
