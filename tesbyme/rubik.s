@@ -1,5 +1,5 @@
-.equ RENDER, 0            # 1 = GUI build with LED, 0 = CLI build for --iret
-
+# Renderer blocks are marked "# BEGIN RENDER" ... "# END RENDER".
+# GUI build: use this file as is. CLI build: strip those blocks with sed
 .text
   la s1, h_O #p
   la s2, h_N  
@@ -165,7 +165,7 @@ found:
   lbu t4, 60(s0)
   li  s10, 0             # k = 0
 
-.if RENDER
+# BEGIN RENDER
   la   a2, cube           # cube[0..6] = P, cube[7..13] = O
   la   a3, input
   li   a4, 14
@@ -178,7 +178,7 @@ r_init:
   addi a4, a4, -1
   bnez a4, r_init
   jal  ra, render         # draw the scrambled cube
-.endif
+# END RENDER
 
 e_loop:
   bgeu s10, s9, e_check  # k >= n -> all moves replayed
@@ -189,14 +189,14 @@ e_loop:
   add  t5, a6, t0
   lbu  a1, 0(t5)         # turn
   jal  ra, rot
-.if RENDER
+# BEGIN RENDER
   add  t6, s0, s10
   lbu  t0, 84(t6)         # m = move_dis[k] again (rot used t0)
   add  t5, a6, t0
   lbu  a1, 0(t5)          # turn again (rot counted a1 down to 0)
   jal  ra, arr_move       # same move on the P/O arrays
   jal  ra, render         # redraw
-.endif
+# END RENDER
   addi s10, s10, 1       # k++
   j e_loop
 
@@ -338,7 +338,7 @@ coord_found:
   slli a4, a1, 2
   or   a4, a4, a2        # (i<<2) | o[i]
   ret
-.if RENDER
+# BEGIN RENDER
   # arr_move: apply face a0, a1 quarter turns to cube[]
   # keeps t1..t4, s-registers, a0
 arr_move:
@@ -426,7 +426,7 @@ r_row:
   addi a7, a7, -1
   bnez a7, r_loop
   ret
-.endif
+# END RENDER
 
 .data
 perm_off: .word 0, 10080, 20160
@@ -465,7 +465,7 @@ move_names:
   .string "D'"
   .byte 0             
 
-.if RENDER
+# BEGIN RENDER
 palette:                  # face color ids: U=0 L=1 F=2 R=3 B=4 D=5
   .word 0xFFFFFF, 0xFF8000, 0x00C000, 0xFF0000, 0x0000FF, 0xFFFF00
 fl_tab:                   # slot, s, pixel index (y*35 + x)
@@ -538,4 +538,4 @@ cube:                     # P[7], O[7] for drawing
   .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 tmp:
   .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-.endif
+# END RENDER
