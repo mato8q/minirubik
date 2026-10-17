@@ -386,6 +386,40 @@ static void tables(void){
     fclose(f);
 }
 
+static void c_bytes(FILE *f, const char *label, const uint8_t *arr, uint32_t n, const char *dims){
+    fprintf(f, "const unsigned char %s%s = {", label, dims);
+    for(uint32_t i=0; i<n; ++i){
+        if(i==0) fprintf(f,"\n %u", (unsigned int)arr[i]);
+        else if (i%16==0){
+            fprintf(f,",\n %u", (unsigned int)arr[i]); }
+        //fprintf(f, "\n .byte %u", (unsigned int) arr[i]);
+        else fprintf(f, ", %u", (unsigned int) arr[i]);
+    }
+    fprintf(f,"\n};\n");
+}
+
+static void c_halves(FILE *f, const char *label, const uint16_t *arr, uint32_t n, const char *dims){
+    fprintf(f, "const unsigned short %s%s = {", label, dims);
+    for(uint32_t i=0; i<n; ++i){
+        if(i==0) fprintf(f,"\n %u", (unsigned int)arr[i]);
+        else if (i%16==0){
+            fprintf(f,",\n %u", (unsigned int)arr[i]); }
+        //fprintf(f, "\n .byte %u", (unsigned int) arr[i]);
+        else fprintf(f, ", %u", (unsigned int) arr[i]);
+    }
+    fprintf(f,"\n};\n");
+}
+
+static void c_tables(void){
+    FILE *f = fopen("tables.h", "w");
+    c_halves(f,"permutation", &permutation[0][0],3*PERMUTATIONS, "[3][5040]");
+    c_halves(f,"orientation",&orientation[0][0],3*ORIENTATIONS,"[3][729]");
+    c_bytes(f,"h_O", h_O, ORIENTATIONS,"[729]");
+    c_bytes(f,"h_N", h_N, PERMUTATIONS*9,"[45360]");
+    c_bytes(f,"cub_move", &cub_move[0][0],3*28,"[3][28]");
+    fclose(f);
+}
+
 int main(void)
 {
     build_tables();
@@ -422,6 +456,7 @@ int main(void)
     }
     printf("states where h_P > h_N: %u\n", (unsigned int) p_wins);
     tables();
+    c_tables();
     uint8_t *bfs_table = fullBFS_h_P();
     uint32_t ct = 0; // count h that exceeds d
     for(uint32_t rank = 0; rank < STATES; ++rank) {
